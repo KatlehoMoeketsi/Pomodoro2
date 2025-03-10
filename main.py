@@ -6,7 +6,7 @@ from PyQt6.QtWidgets import (
 )
 
 from PyQt6.QtCore import Qt, QSize, QTimer, QUrl
-from PyQt6.QtGui import QIcon
+from PyQt6.QtGui import QIcon, QFont
 import sys
 import os
 import pygame
@@ -57,7 +57,8 @@ class PomodoroApp(QMainWindow):
         self.init_UI()
 
     def init_UI(self):
-        self.setWindowTitle("Pomodoro App")
+        self.setWindowTitle("Pomodoro-Beta")
+        self.setWindowIcon(QIcon("tom.ico"))
         self.setGeometry(100, 100, 800, 500)
 
         # Main container
@@ -72,9 +73,9 @@ class PomodoroApp(QMainWindow):
         sidebar_layout = QHBoxLayout()  # Horizontal layout for sidebar and main content
         self.nav_list = QListWidget()
         self.nav_list.setFixedWidth(200)
-        self.nav_list.addItem(QListWidgetItem("Pomodoro Page"))
-        self.nav_list.addItem(QListWidgetItem("About Page"))
-        self.nav_list.addItem(QListWidgetItem("Settings Page"))
+        self.nav_list.addItem(QListWidgetItem("Pomodoro"))
+        self.nav_list.addItem(QListWidgetItem("About"))
+        self.nav_list.addItem(QListWidgetItem("Settings"))
         self.nav_list.clicked.connect(self.switch_page)
 
         # Stack for switching pages
@@ -252,12 +253,32 @@ class PomodoroApp(QMainWindow):
     def create_about_page(self):
         page = QWidget()
         #Then create a layout object of type QVBoxLayout which receives an object of type QWidget
+         # Layout
         layout = QVBoxLayout(page)
-        """ We've just created the following:
-         1. A page
-         2. Defined a layout
-         3. Now we will start adding the elements"""
+        layout.setContentsMargins(40, 40, 40, 40)  # Add some padding
+        layout.setSpacing(20)  # Space between elements
 
+        # Title Label
+        title_label = QLabel("About the Pomodoro Technique")
+        title_label.setFont(QFont("Arial", 16, QFont.Weight.Bold))
+        title_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        # Description Text
+        description = """
+               The Pomodoro Technique is a time management method that breaks work into 25-minute 
+               sessions called 'Pomodoros', followed by short 5-minute breaks. After four Pomodoros, 
+               take a longer break of 15-30 minutes. 
+
+               This cycle helps improve focus, reduce burnout, and boost productivity.
+               """
+        desc_label = QLabel(description)
+        desc_label.setFont(QFont("Arial", 12))
+        desc_label.setWordWrap(True)  # Allows text to wrap properly
+        desc_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+
+        # Add widgets to layout
+        layout.addWidget(title_label)
+        layout.addWidget(desc_label)
         return page
 
     def create_settings_page(self):
