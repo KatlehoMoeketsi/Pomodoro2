@@ -207,7 +207,7 @@ class PomodoroApp(QMainWindow):
         self.timer_label.setText("--:--")
         self.timer_running = False
         self.session_label.setText("Click Play button to start!")
-        self.play_button.setIcon(QIcon(resource_path("assets/play.svg")))
+        self.play_button.setIcon(QIcon(self.resource_path("assets/play.svg")))
 
     def update_timer(self):
         """update timer to display every second"""
