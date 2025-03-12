@@ -1,29 +1,16 @@
 import os.path
 
+from PyQt6.QtMultimedia import QMediaPlayer, QAudioOutput
 from PyQt6.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLabel, QListWidget,
     QListWidgetItem, QStackedWidget, QFrame
 )
 
-from PyQt6.QtCore import Qt, QSize, QTimer, QUrl
+from PyQt6.QtCore import Qt, QSize, QTimer, QUrl, QThread, pyqtSignal
 from PyQt6.QtGui import QIcon, QFont
 import sys
 import os
 import pygame
-
-
-
-
-def resource_path(relative_path):
-    if hasattr(sys, '_MEIPASS'):
-        return os.path.join(sys._MEIPASS, relative_path)
-    return os.path.join(os.path.abspath("."), relative_path)
-
-
-
-def play_sound(file_path):
-    pygame.mixer.music.load(file_path)
-    pygame.mixer.music.play()
 
 def create_about_page():
     page = QWidget()
@@ -54,6 +41,12 @@ class PomodoroApp(QMainWindow):
         self.play_button = None
         self.timer_label = None
 
+        self.player = QMediaPlayer()
+        self.audio_output = QAudioOutput()
+        self.player.setAudioOutput(self.audio_output)
+
+
+
         self.init_UI()
 
     def init_UI(self):
@@ -76,6 +69,7 @@ class PomodoroApp(QMainWindow):
         self.nav_list.addItem(QListWidgetItem("Pomodoro"))
         self.nav_list.addItem(QListWidgetItem("About"))
         self.nav_list.addItem(QListWidgetItem("Settings"))
+        self.nav_list.setStyleSheet("background-color:#f7f7f7")
         self.nav_list.clicked.connect(self.switch_page)
 
         # Stack for switching pages
@@ -89,6 +83,21 @@ class PomodoroApp(QMainWindow):
         sidebar_layout.addWidget(self.stack)
 
         main_layout.addLayout(sidebar_layout)
+
+    def resource_path(self, relative_path):
+        if getattr(sys, 'frozen', False):  # Running as an executable
+            base_path = sys._MEIPASS
+        else:  # Running as a script
+            base_path = os.path.abspath(".")
+        return os.path.join(base_path, relative_path)
+
+    def play_sound(self, file_name):
+
+        """ Play a sound file using PyQt6 Multimedia """
+        file_path = self.resource_path(f"{file_name}")
+        sound_path = QUrl.fromLocalFile(file_path)
+        self.player.setSource(sound_path)
+        self.player.play()
 
     def switch_page(self):
         """Switch pages based on sidebar selection."""
@@ -105,7 +114,7 @@ class PomodoroApp(QMainWindow):
             self.switch_session()
             # Update the UI immediately
             self.timer_label.setText(self.format_time(self.timer_remaining))
-            self.play_button.setIcon(QIcon(resource_path("assets/pause.svg")))
+            self.play_button.setIcon(QIcon(self.resource_path("assets/pause.svg")))
 
             # Automatically restart timer
             self.timer_running = True
@@ -148,17 +157,17 @@ class PomodoroApp(QMainWindow):
         button_layout= QHBoxLayout(button_frame)
 
         refresh_button = QPushButton()
-        refresh_button.setIcon(QIcon(resource_path("assets/refresh.svg")))
+        refresh_button.setIcon(QIcon(self.resource_path("assets/refresh.svg")))
         refresh_button.clicked.connect(self.reset_timer)
         refresh_button.setIconSize(QSize(48, 48))
 
         self.play_button = QPushButton()
-        self.play_button.setIcon(QIcon(resource_path("assets/play.svg")))
+        self.play_button.setIcon(QIcon(self.resource_path("assets/play.svg")))
         self.play_button.setIconSize(QSize(48, 48))
         self.play_button.clicked.connect(self.toggle_timer)
 
         next_button = QPushButton()
-        next_button.setIcon(QIcon(resource_path("assets/next.svg")))
+        next_button.setIcon(QIcon(self.resource_path("assets/next.svg")))
         next_button.setIconSize(QSize(48, 48))
         next_button.clicked.connect(self.next_session)
 
@@ -184,11 +193,11 @@ class PomodoroApp(QMainWindow):
     def toggle_timer(self):
         if self.timer_running:
             self.timer.stop()
-            self.play_button.setIcon(QIcon(resource_path("assets/play.svg")))
+            self.play_button.setIcon(QIcon(self.resource_path("assets/play.svg")))
             self.session_label.setText("Paused")
         else:
             self.timer.start(1000)
-            self.play_button.setIcon(QIcon(resource_path("assets/pause.svg")))
+            self.play_button.setIcon(QIcon(self.resource_path("assets/pause.svg")))
             self.session_label.setText("Work!")
         self.timer_running = not self.timer_running
 
@@ -209,13 +218,13 @@ class PomodoroApp(QMainWindow):
             self.timer.stop()
             self.timer_running = False
             self.timer_label.setText(self.format_time(self.timer_remaining))
-            self.play_button.setIcon(QIcon(resource_path("assets/play.svg")))
+            self.play_button.setIcon(QIcon(self.resource_path("assets/play.svg")))
 
             self.switch_session()
 
             #Update the UI immediately
             self.timer_label.setText(self.format_time(self.timer_remaining))
-            self.play_button.setIcon(QIcon(resource_path("assets/pause.svg")))
+            self.play_button.setIcon(QIcon(self.resource_path("assets/pause.svg")))
 
             # Automatically restart timer
             self.timer_running = True
@@ -226,18 +235,18 @@ class PomodoroApp(QMainWindow):
         if self.is_work_session:
             self.session_count += 1
             if self.session_count % 4 == 0:
-                play_sound("assets/break_start.wav")
+                self.play_sound("assets/break_start.wav")
                 self.timer_remaining = self.long_break  # long break every 4 sessions
                 self.session_label.setText("Long Break")
 
             else:
-                play_sound("assets/break_start.wav")
+                self.play_sound("assets/break_start.wav")
                 self.timer_remaining = self.short_break  # Short break
                 self.session_label.setText("Short Break")
 
             self.is_work_session = False
         else:
-            play_sound("assets/work_start.wav")
+            self.play_sound("assets/work_start.wav")
             self.timer_remaining = 25 * 60
             self.is_work_session = True
             self.session_label.setText("Work Time")
@@ -248,7 +257,6 @@ class PomodoroApp(QMainWindow):
         minutes = seconds // 60
         seconds = seconds % 60
         return f"{minutes:02}:{seconds:02}"
-
 
     def create_about_page(self):
         page = QWidget()
